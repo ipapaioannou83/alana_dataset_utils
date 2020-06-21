@@ -2,7 +2,7 @@ import json
 from tqdm import tqdm
 
 
-def load_alana_dataset(filename, lazy=False):
+def load_alana_dataset(filename, lazy=False, batch=None):
     """
     Loads the Alana dataset dump file either as an object or as a generator
     :param filename: the json file
@@ -16,12 +16,19 @@ def load_alana_dataset(filename, lazy=False):
         num_lines = sum(1 for line in f)
 
     if lazy == False:
-        for line in tqdm(open(filename), total=num_lines, desc="Reading file..."):
+        for line in tqdm(open(filename), total=num_lines, desc=f"Reading {filename}..."):
             data.append(json.loads(line))
         return data
-#    else:
-#        for line in tqdm(open(filename), total=num_lines, desc="Reading file..."):
-#            yield json.loads(line)
+    else:
+        i = 1
+        for line in tqdm(open(filename), total=batch, desc="Reading file..."):
+            if i <= batch:
+                data.append(json.loads(line))
+                i += 1
+            else:
+                break
+        return data
+
 
 
 def get_user_system_pairs(filter_bots=None, data=None, preprocessed=False):
@@ -36,7 +43,7 @@ def get_user_system_pairs(filter_bots=None, data=None, preprocessed=False):
 
     dataset = {}
     if isinstance(data, list):
-        for item in tqdm(data, desc="Extracting u/s pairs..."):
+        for item in data:
             h = []
             for s in item['states']:
                 try:
@@ -70,7 +77,6 @@ def get_asr_filtered(min_asr=0, data=None):
     if not data:
         raise Exception("No dataset was given.")
     raise NotImplementedError
-
 
 def get_rating_filtered(min_rating=0, data=None, operator='eq'):
     VALID_OPR = {'eq', 'gt', 'lt'}
